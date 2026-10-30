@@ -45,12 +45,13 @@ function menu(){
   <div class="body"><label for="nq">Nombre de questions par session</label><input id="nq" type="number" inputmode="numeric" min="1" max="500" value="${st.nq}">
   <label for="lim">Chrono</label><select id="lim">${LIMITS.map(l=>`<option value="${l}" ${l==st.limit?'selected':''}>${l?l+' s par question':'Sans chrono'}</option>`).join('')}</select>
   <button class="btn pri big" id="go">Démarrer une session</button>
+  <button class="btn big" id="bc">🏁 Mode concours · 36 planches × 10 s</button>
   <div class="menu"><button class="btn" id="b1">📊 Stats des sessions</button><button class="btn" id="b2">📈 Progression</button>
   <button class="btn" id="b3">⬇ Exporter (JSON)</button><button class="btn" id="b4">⬇ Exporter (CSV)</button>
   <button class="btn" id="b5" style="grid-column:1/-1;color:var(--r)">🗑 Effacer toutes les données</button></div>${window.Sync?Sync.panel():''}</div>`;
   window.Sync&&Sync.bind();
   $('#go').onclick=()=>{st.nq=Math.max(1,Math.min(500,+$('#nq').value||36));st.limit=+$('#lim').value;start()};
-  $('#b1').onclick=sessions;$('#b2').onclick=()=>progress('session');
+  $('#bc').onclick=()=>startConcours();$('#b1').onclick=sessions;$('#b2').onclick=()=>progress('session');
   $('#b3').onclick=()=>dl('cm1-export.json',JSON.stringify(load(),null,1),'application/json');
   $('#b4').onclick=()=>{const r=['session,date,question,operation,resultat,reponse,temps_s,correct'];
     load().forEach(s=>s.items.forEach((x,i)=>r.push([s.id,new Date(s.start).toISOString(),i+1,'"'+x.op+'"',x.res,x.ans,x.s,x.ok?1:0].join(','))));
@@ -101,6 +102,7 @@ function finish(timeout){
 
 /* ---------- Résumé / sessions ---------- */
 function summary(s,back){
+  if(s.mode==='concours')return concoursSummary(s,back);
   clearInterval(st.iv);
   const pts=s.items.map(x=>({v:x.s,c:x.ok?'#16a34a':'#ef4444'}));
   app.innerHTML=`<div class="head"><div><h1>Session</h1><div class="sub">${fd(s.start)} · ${s.items.length}/${s.planned} questions${s.limit?' · '+s.limit+' s':''}</div></div><button class="btn" id="bk">← ${back=='menu'?'Menu':'Sessions'}</button></div>
@@ -116,7 +118,7 @@ function summary(s,back){
 function sessions(){
   const all=load().filter(s=>s.items.length).reverse();
   app.innerHTML=`<div class="head"><div><h1>Sessions</h1><div class="sub">${all.length} session(s)</div></div><button class="btn" id="bk">← Menu</button></div>
-  <div class="body">${all.map((s,i)=>{const t=stats(s.items);return`<div class="tr" data-i="${i}"><div class="dt">${fd(s.start)}<br><span class="m">${s.items.length}/${s.planned} questions · médiane bonnes ${fs(t.ok)}</span></div><b>${t.nok}/${t.n}</b></div>`}).join('')||'<p class="sub">Aucune session pour le moment.</p>'}</div>`;
+  <div class="body">${all.map((s,i)=>{const t=stats(s.items);return`<div class="tr" data-i="${i}"><div class="dt">${fd(s.start)}<br><span class="m">${s.mode==='concours'?'🏁 Concours · '+Math.round(s.score||0)+' % · '+s.items.length+'/'+s.planned+' planches':s.items.length+'/'+s.planned+' questions · médiane bonnes '+fs(t.ok)}</span></div><b>${t.nok}/${t.n}</b></div>`}).join('')||'<p class="sub">Aucune session pour le moment.</p>'}</div>`;
   $('#bk').onclick=menu;document.querySelectorAll('.tr').forEach(r=>r.onclick=()=>summary(all[r.dataset.i],'sessions'));
 }
 
