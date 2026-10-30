@@ -18,7 +18,7 @@ function render(){
      <input id="sy-p" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
      <div class="menu" style="margin-top:0"><button class="btn pri" id="sy-in">Se connecter</button><button class="btn" id="sy-up">Créer un compte</button></div><div class="sub">${msg}</div>`;
   el.onclick=async e=>{
-    const id=e.target.id;if(!id||!id.startsWith('sy-'))return;
+    const b=e.target.closest('button');if(!b||!b.id.startsWith('sy-'))return;const id=b.id;
     if(id==='sy-now')return run();
     if(id==='sy-out'){await sb.auth.signOut();user=null;msg='';return render()}
     const em=$('#sy-e').value.trim(),pw=$('#sy-p').value;
