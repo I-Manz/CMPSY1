@@ -11,12 +11,18 @@ const S={onChange:null};
 S.panel=()=>sb?'<div id="sync"></div>':'';
 function render(){
   const el=$('#sync');if(!el)return;
-  el.innerHTML=user
+  const ae=document.activeElement,keep={};
+  ['sy-e','sy-p'].forEach(i=>{const x=$('#'+i);if(x)keep[i]=x.value});
+  const html=user
    ?`<h2>☁ Synchronisation</h2><div class="sub">Connecté : ${user.email}</div>
      <div class="menu"><button class="btn" id="sy-now">Synchroniser</button><button class="btn" id="sy-out">Se déconnecter</button></div><div class="sub">${msg}</div>`
    :`<h2>☁ Synchronisation</h2><input id="sy-e" type="email" placeholder="E-mail" autocomplete="email">
      <input id="sy-p" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
      <div class="menu" style="margin-top:0"><button class="btn pri" id="sy-in">Se connecter</button><button class="btn" id="sy-up">Créer un compte</button></div><div class="sub">${msg}</div>`;
+  if(el.dataset.h===html)return;
+  el.dataset.h=html;el.innerHTML=html+'<div class="sub" style="font-size:.7rem;opacity:.6">sync v3</div>';
+  Object.keys(keep).forEach(i=>{const x=$('#'+i);if(x)x.value=keep[i]});
+  if(ae&&ae.id&&$('#'+ae.id))$('#'+ae.id).focus();
   el.onclick=async e=>{
     const b=e.target.closest('button');if(!b||!b.id.startsWith('sy-'))return;const id=b.id;
     if(id==='sy-now')return run();
