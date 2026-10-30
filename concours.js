@@ -18,6 +18,7 @@ function cqBegin(){
   <div class="row"><span></span><button class="btn pri" type="submit">Valider</button></div></form></div>`;
   $('#back').onclick=()=>{if(confirm('Quitter le concours ? Les planches terminées sont conservées.'))menu()};
   $('#f').onsubmit=cqSubmit;
+  $('#ans').oninput=e=>{e.target.value=e.target.value.replace(/[.,]/g,'')};
   cq={i:0};cqNew(performance.now());
   st.iv=setInterval(cqTick,50);
 }
@@ -59,26 +60,38 @@ function cqEnd(){
   if(cq.i>=CQ.n){clearInterval(st.iv);return concoursSummary(st.s,'menu')}
   cqNew(cq.t0+CQ.dur*1000);
 }
-function areaChart(v){
+function areaChart(v,o={}){
   const W=640,H=220,L=36,R=10,T=10,B=26,n=v.length;if(n<2)return'';
   const X=i=>L+i*(W-L-R)/(n-1),Y=p=>T+(H-T-B)*(1-p/100);
   const pts=v.map((p,i)=>X(i).toFixed(1)+','+Y(p).toFixed(1)).join(' ');
   let g='',xl='';
   [0,50,100].forEach(p=>g+=`<line x1="${L}" x2="${W-R}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--bd)" stroke-width=".6"/><text x="${L-6}" y="${Y(p)+4}" text-anchor="end">${p}</text>`);
   for(let m=0;m<=n/2;m+=60)xl+=`<text x="${X(Math.min(m*2,n-1))}" y="${H-8}" text-anchor="middle">${m/60}:00</text>`;
-  return`<svg class="chart" viewBox="0 0 ${W} ${H}">${g}<polygon points="${L},${Y(0)} ${pts} ${X(n-1)},${Y(0)}" fill="#7c6fdc" fill-opacity=".18"/><polyline points="${pts}" fill="none" stroke="#7c6fdc" stroke-width="1.6"/>${xl}</svg>`;
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}">${g}<polygon points="${L},${Y(0)} ${pts} ${X(n-1)},${Y(0)}" fill="#7c6fdc" fill-opacity=".18"/><polyline points="${pts}" fill="none" stroke="#7c6fdc" stroke-width="1.6"/>${o.lv!=null?`<line x1="${L}" x2="${W-R}" y1="${Y(o.lv)}" y2="${Y(o.lv)}" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="2 4" stroke-linecap="round"/><text x="${L+4}" y="${Y(o.lv)-4}" style="fill:#f59e0b">score ${Math.round(o.lv)} %</text>`:''}${o.sel>=0?`<line x1="${X(o.sel)}" x2="${X(o.sel)}" y1="${T}" y2="${Y(0)}" stroke="var(--tx)" stroke-width="1"/><circle cx="${X(o.sel)}" cy="${Y(v[o.sel])}" r="5" fill="#7c6fdc" stroke="var(--tx)" stroke-width="2"/>`:''}${xl}</svg>`;
 }
 function concoursSummary(s,back){
   clearInterval(st.iv);
   const it=s.items,n=it.length,okn=it.filter(x=>x.ok).length,err=it.reduce((a,x)=>a+(x.wrong||0),0),none=it.filter(x=>!x.ok&&!x.wrong).length;
   const sc=s.score!=null?s.score:(n?it.reduce((a,x)=>a+x.sc,0)/n:0);
   app.innerHTML=`<div class="head"><div><h1>Concours</h1><div class="sub">${fd(s.start)} · ${n}/${s.planned} planches</div></div><button class="btn" id="bk">← ${back=='menu'?'Menu':'Sessions'}</button></div>
-  <div class="body"><div class="lab" style="text-align:center">SCORE FINAL</div><div class="big-n">${Math.round(sc)} %</div>
+  <div class="body"><div class="lab" style="text-align:center">SCORE FINAL</div><div class="big-n tc" id="sc" style="--c:#f59e0b;cursor:pointer">${Math.round(sc)} %</div>
   <div class="stats"><div><b>${okn}/${n}</b>bonnes réponses</div><div><b>${err}</b>réponses fausses</div><div><b>${none}</b>sans réponse</div></div>
-  <h2>Pourcentage au cours du temps</h2>${areaChart(s.curve||[])}
+  <h2>Pourcentage au cours du temps</h2><div class="sub" style="margin:6px 0">Touche le score pour tracer sa ligne, ou le graphique pour voir la planche correspondante.</div><div id="cw"></div><div class="tip" id="tip"></div>
   <h2>Détail</h2><table><tr><th>#</th><th>Opération</th><th>Réponse</th><th>Score</th></tr>
   ${it.map((x,i)=>`<tr><td>${i+1}</td><td>${x.op} = ${x.res}</td><td style="color:var(${x.ok?'--g':'--r'})">${x.ans||'–'}${x.ok&&x.wrong?' ('+x.wrong+' err.)':''}</td><td>${Math.round(x.sc)} %</td></tr>`).join('')}</table>
   ${back=='sessions'?'<button class="btn big" id="del" style="color:var(--r)">Supprimer cette session</button>':''}</div>`;
   $('#bk').onclick=back=='menu'?menu:sessions;
   const d=$('#del');if(d)d.onclick=()=>{if(confirm('Supprimer cette session ?')){save(load().filter(x=>x.id!=s.id));window.Sync&&Sync.remove([s.id]);sessions()}};
+  const cv=s.curve||[],per=CQ.dur*2;let sel=-1,sl=false;
+  const draw=()=>{
+    $('#cw').innerHTML=areaChart(cv,{sel,lv:sl?sc:null});$('#sc').classList.toggle('on',sl);
+    const t=$('#tip');if(sel<0){t.textContent='Aucun point sélectionné.';return}
+    const pi=Math.min(it.length-1,Math.floor(sel/per)),x=it[pi],sec=sel/2;let r;
+    if(!x.ans)r='<b>aucune réponse</b>';else{const df=parseInt(x.ans,10)-x.res;r=`ta réponse : <b>${x.ans}</b> (${x.ok?'✓ juste':'✗ écart '+(df>0?'+':'')+df})`}
+    t.innerHTML=`<b>Planche ${pi+1}</b> · ${x.op} = <b>${x.res}</b><br>${r} · score de la planche ${Math.round(x.sc)} %<br>à ${Math.floor(sec/60)}:${String(Math.floor(sec%60)).padStart(2,'0')} · barre à ${cv[sel]} %`;
+  };
+  $('#cw').onclick=e=>{const svg=$('#cw svg');if(!svg||cv.length<2)return;const r=svg.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*640;
+    const i=Math.max(0,Math.min(cv.length-1,Math.round((x-36)/(640-36-10)*(cv.length-1))));sel=sel===i?-1:i;draw()};
+  $('#sc').onclick=()=>{sl=!sl;draw()};
+  draw();
 }

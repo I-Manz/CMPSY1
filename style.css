@@ -44,3 +44,8 @@ footer{text-align:center;color:var(--mut);font-size:.8rem;margin-top:14px}
 .big-n{font-size:3.2rem;font-weight:700;text-align:center;margin:4px 0 14px}
 .ans.ko{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.stats .tc{cursor:pointer;border-left:4px solid var(--c)}
+.stats .tc.on,.tc.on{background:var(--card);box-shadow:0 0 0 1.5px var(--c) inset;color:var(--tx)}
+.big-n.tc{border-left:0;border-radius:12px}
+.tip{background:var(--soft);border-radius:12px;padding:10px 12px;margin-top:8px;font-size:.92rem;line-height:1.5}

@@ -20,7 +20,7 @@ function render(){
      <input id="sy-p" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
      <div class="menu" style="margin-top:0"><button class="btn pri" id="sy-in">Se connecter</button><button class="btn" id="sy-up">Créer un compte</button></div><div class="sub">${msg}</div>`;
   if(el.dataset.h===html)return;
-  el.dataset.h=html;el.innerHTML=html+'<div class="sub" style="font-size:.7rem;opacity:.6">sync v4</div>';
+  el.dataset.h=html;el.innerHTML=html+'<div class="sub" style="font-size:.7rem;opacity:.6">sync v6</div>';
   Object.keys(keep).forEach(i=>{const x=$('#'+i);if(x)x.value=keep[i]});
   if(ae&&ae.id&&$('#'+ae.id))$('#'+ae.id).focus();
   el.onclick=async e=>{
